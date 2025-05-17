@@ -76,3 +76,5 @@ This project is a frontend engineering assessment that demonstrates the implemen
    ```bash
    git clone git@github.com:matosky/insight-ui-assessment.git
    cd insight-ui-assessment
+   npm install
+   npm run dev
