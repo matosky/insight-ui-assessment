@@ -1,5 +1,5 @@
 "use client"
-
+import useSWR from "swr"
 import { useState, useEffect } from "react"
 
 interface TrendDataPoint {
@@ -7,7 +7,7 @@ interface TrendDataPoint {
   sentiment: number
 }
 
-interface TrendData {
+export interface TrendData {
   hashtag: string
   range: string
   trend: TrendDataPoint[]
@@ -20,42 +20,48 @@ interface UseHashtagTrendResult {
   mutate: () => void
 }
 
-export function useHashtagTrend(hashtag: string): UseHashtagTrendResult {
-  const [data, setData] = useState<TrendData | null>(null)
-  const [isLoading, setIsLoading] = useState<boolean>(true)
-  const [error, setError] = useState<Error | null>(null)
-  const [refreshKey, setRefreshKey] = useState<number>(0)
+// Create a fetcher function for SWR
+const fetcher = async (url: string) => {
+  console.log("Fetching data from:", url)
+  const response = await fetch(url, {
+    cache: "no-store",
+    headers: {
+      "Cache-Control": "no-cache, no-store, must-revalidate",
+      Pragma: "no-cache",
+      Expires: "0",
+    },
+  })
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true)
-      setError(null)
-      setData(null) // Clear existing data when fetching new data
-
-      try {
-        // Add cache-busting query parameter
-        const timestamp = new Date().getTime()
-        const response = await fetch(`/api/trends/${hashtag}?t=${timestamp}`)
-
-        if (!response.ok) {
-          throw new Error(`Failed to fetch data: ${response.status} ${response.statusText}`)
-        }
-
-        const result = await response.json()
-        setData(result)
-      } catch (err) {
-        setError(err instanceof Error ? err : new Error("An unknown error occurred"))
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    fetchData()
-  }, [hashtag, refreshKey])
-
-  const mutate = () => {
-    setRefreshKey((prev) => prev + 1)
+  if (!response.ok) {
+    throw new Error(`Failed to fetch data: ${response.status} ${response.statusText}`)
   }
 
-  return { data, isLoading, error, mutate }
+  return response.json()
+}
+
+export function useHashtagTrend(hashtag: string): UseHashtagTrendResult {
+  // Force a new key when hashtag changes to ensure SWR refetches
+  const [swrKey, setSwrKey] = useState<string>(`/api/trends/${hashtag}?t=${Date.now()}`)
+
+  // Update the SWR key when hashtag changes
+  useEffect(() => {
+    setSwrKey(`/api/trends/${hashtag}?t=${Date.now()}`)
+  }, [hashtag])
+
+  // Use SWR for data fetching with the dynamic key
+  const { data, error, isLoading, mutate } = useSWR<TrendData>(swrKey, fetcher, {
+    revalidateOnFocus: false,
+    dedupingInterval: 0, // Disable deduping to ensure refetch on hashtag change
+    shouldRetryOnError: true,
+    errorRetryCount: 3,
+  })
+
+  console.log("SWR key:", swrKey, "Data:", data?.hashtag)
+
+  return {
+    data,
+    isLoading,
+    error,
+    mutate,
+  }
 }

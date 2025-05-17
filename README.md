@@ -17,6 +17,7 @@ This project is a frontend engineering assessment that demonstrates the implemen
 - Min/max sentiment markers
 - Dark mode support
 - Lazy-loaded components for better performance
+- SWR for efficient data fetching and caching
 
 ## Screenshots
 
@@ -47,13 +48,15 @@ This project is a frontend engineering assessment that demonstrates the implemen
 3. **Min/Max Markers**: Added visual indicators for minimum and maximum sentiment values
 4. **Dark Mode**: Implemented a complete theme system with light/dark mode toggle
 5. **Lazy Loading**: Used next/dynamic to lazy-load components for better performance
+6. **SWR Integration**: Implemented SWR for efficient data fetching with caching and revalidation
 
 ### Challenges & Solutions
 
-- **Chart Updates**: Ensured the chart updates correctly when switching hashtags by implementing direct state management and manual URL updates
+- **Chart Updates**: Ensured the chart updates correctly when switching hashtags by implementing SWR with dynamic keys and force re-rendering mechanisms
 - **Loading States**: Created a loading state that only affects the chart area while keeping the page structure intact
 - **Responsive Design**: Carefully designed the UI to work well on all device sizes
 - **Performance**: Optimized rendering performance with memoization and lazy loading
+- **Data Caching**: Implemented proper cache invalidation strategies with SWR to ensure fresh data
 
 ## Technologies Used
 
@@ -61,6 +64,7 @@ This project is a frontend engineering assessment that demonstrates the implemen
 - **TypeScript**: For type safety and better developer experience
 - **Material UI**: For UI components and styling
 - **@mui/x-charts**: For data visualization
+- **SWR**: For data fetching, caching, and revalidation
 - **React Hooks**: For state management and side effects
 
 ## Getting Started
@@ -76,5 +80,3 @@ This project is a frontend engineering assessment that demonstrates the implemen
    ```bash
    git clone git@github.com:matosky/insight-ui-assessment.git
    cd insight-ui-assessment
-   npm install
-   npm run dev

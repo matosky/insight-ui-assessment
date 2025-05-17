@@ -5,82 +5,41 @@ import { Card, CardContent, CardHeader, Typography, Box, CircularProgress, Divid
 import { TrendingUp, TrendingDown } from "@mui/icons-material"
 import SentimentChart from "./sentiment-chart"
 import HashtagDropdown from "./hashtag-dropdown"
+import { useHashtagTrend } from "@/hooks/use-hashtag-trend"
 
 interface HashtagTrendCardProps {
   hashtag: string
 }
 
-// Define types for our data
-interface TrendDataPoint {
-  date: string
-  sentiment: number
-}
-
-interface TrendData {
-  hashtag: string
-  range: string
-  trend: TrendDataPoint[]
-}
-
 const HashtagTrendCard = ({ hashtag: initialHashtag }: HashtagTrendCardProps) => {
+  console.log("HashtagTrendCard rendered with initialHashtag:", initialHashtag)
+
   // Track the current hashtag in component state
   const [hashtag, setHashtag] = useState(initialHashtag)
-  const [data, setData] = useState<TrendData | null>(null)
-  const [isLoading, setIsLoading] = useState<boolean>(true)
-  const [error, setError] = useState<Error | null>(null)
+
+  // Force component update when hashtag changes
+  const [updateKey, setUpdateKey] = useState(0)
 
   // Update internal hashtag when prop changes
   useEffect(() => {
+    console.log("initialHashtag changed to:", initialHashtag)
     setHashtag(initialHashtag)
   }, [initialHashtag])
 
-  // Fetch data when hashtag changes
-  useEffect(() => {
-    console.log("Fetching data for hashtag:", hashtag)
-
-    const fetchData = async () => {
-      setIsLoading(true)
-      setError(null)
-      setData(null) // Clear existing data
-
-      try {
-        // Add timestamp to prevent caching
-        const timestamp = new Date().getTime()
-        const response = await fetch(`/api/trends/${hashtag}?t=${timestamp}`, {
-          cache: "no-store",
-          headers: {
-            "Cache-Control": "no-cache, no-store, must-revalidate",
-            Pragma: "no-cache",
-            Expires: "0",
-          },
-        })
-
-        if (!response.ok) {
-          throw new Error(`Failed to fetch data: ${response.status} ${response.statusText}`)
-        }
-
-        const result = await response.json()
-        console.log("Data received:", result)
-        setData(result)
-      } catch (err) {
-        console.error("Error fetching data:", err)
-        setError(err instanceof Error ? err : new Error("An unknown error occurred"))
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    fetchData()
-  }, [hashtag])
+  // Use SWR hook for data fetching
+  const { data, isLoading, error, mutate } = useHashtagTrend(hashtag)
 
   // Handle hashtag change from dropdown
   const handleHashtagChange = useCallback(
     (newHashtag: string) => {
-      console.log("Hashtag changed to:", newHashtag)
+      console.log("handleHashtagChange called with:", newHashtag)
 
       if (newHashtag !== hashtag) {
         // Update internal state
         setHashtag(newHashtag)
+
+        // Force component update
+        setUpdateKey((prev) => prev + 1)
 
         // Update URL without page refresh
         window.history.pushState({}, "", `/insights/${newHashtag}`)
@@ -99,12 +58,8 @@ const HashtagTrendCard = ({ hashtag: initialHashtag }: HashtagTrendCardProps) =>
 
   // Handle retry on error
   const handleRetry = useCallback(() => {
-    // Force refetch by updating the dependency
-    setIsLoading(true)
-    const currentHashtag = hashtag
-    setHashtag("temp")
-    setTimeout(() => setHashtag(currentHashtag), 10)
-  }, [hashtag])
+    mutate() // SWR's mutate function to retry the request
+  }, [mutate])
 
   // If there's an error, show error state with retry button
   if (error) {
@@ -135,7 +90,7 @@ const HashtagTrendCard = ({ hashtag: initialHashtag }: HashtagTrendCardProps) =>
         <HashtagDropdown currentHashtag={hashtag} onHashtagChange={handleHashtagChange} />
       </Box>
 
-      <Card elevation={3} sx={{ borderRadius: 2, overflow: "hidden" }}>
+      <Card elevation={3} sx={{ borderRadius: 2, overflow: "hidden" }} key={`card-${updateKey}`}>
         <CardHeader
           title={
             <Typography variant="h5" component="div" fontWeight="bold">
@@ -191,7 +146,7 @@ const HashtagTrendCard = ({ hashtag: initialHashtag }: HashtagTrendCardProps) =>
               </Typography>
             </Box>
           ) : data ? (
-            <SentimentChart data={data.trend} key={hashtag} />
+            <SentimentChart data={data.trend} key={`chart-${hashtag}-${updateKey}`} />
           ) : null}
 
           {data && !isLoading && (

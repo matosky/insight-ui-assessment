@@ -74,8 +74,11 @@ export async function GET(request: Request, { params }: { params: { hashtag: str
   // Get the hashtag from the URL
   const { hashtag } = params
 
+  // Log the request
+  console.log(`API request for hashtag: ${hashtag} at ${new Date().toISOString()}`)
+
   // Simulate network delay (shorter delay for better UX)
-  await new Promise((resolve) => setTimeout(resolve, 500))
+  await new Promise((resolve) => setTimeout(resolve, 300))
 
   // Return 404 if hashtag doesn't exist in our data
   if (!trendData[hashtag]) {

@@ -1,4 +1,5 @@
 "use client"
+
 import { Box, Typography } from "@mui/material"
 
 interface HashtagDropdownProps {
@@ -17,7 +18,7 @@ const HashtagDropdown = ({ currentHashtag, onHashtagChange }: HashtagDropdownPro
       <select
         value={currentHashtag}
         onChange={(e) => {
-          // Call the callback to notify parent
+          console.log("Dropdown changed to:", e.target.value)
           onHashtagChange(e.target.value)
         }}
         style={{

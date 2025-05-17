@@ -5,6 +5,7 @@ import { LineChart } from "@mui/x-charts/LineChart"
 import type { ChartsXAxis, ChartsYAxis } from "@mui/x-charts"
 import { useTheme } from "@mui/material/styles"
 import { useMediaQuery, Box, Typography } from "@mui/material"
+import { memo } from "react"
 
 interface SentimentDataPoint {
   date: string
@@ -45,6 +46,65 @@ const SentimentChart = ({ data }: SentimentChartProps) => {
     return lastValue > firstValue ? theme.palette.success.main : theme.palette.error.main
   }, [data, theme.palette])
 
+  // Memoize chart configuration
+  const chartConfig = useMemo(() => {
+    return {
+      series: [
+        {
+          data: yValues,
+          label: "Sentiment",
+          color: chartColor,
+          showMark: true,
+          area: true,
+          valueFormatter: (value: number) => value.toFixed(2),
+          // Highlight min and max points
+          highlightedItems: [
+            { itemIndex: minIndex, style: { fill: theme.palette.error.main } },
+            { itemIndex: maxIndex, style: { fill: theme.palette.success.main } },
+          ],
+        },
+      ],
+      xAxis: [
+        {
+          data: xLabels,
+          scaleType: "point",
+          tickLabelStyle: {
+            fontSize: isMobile ? 10 : 12,
+            angle: isMobile ? 45 : 0,
+            fill: theme.palette.text.secondary,
+          },
+        } as ChartsXAxis,
+      ],
+      yAxis: [
+        {
+          min: Math.min(-0.3, minSentiment - 0.1),
+          max: Math.max(0.6, maxSentiment + 0.1),
+          tickLabelStyle: {
+            fontSize: isMobile ? 10 : 12,
+            fill: theme.palette.text.secondary,
+          },
+        } as ChartsYAxis,
+      ],
+      height: 300,
+      margin: {
+        left: isMobile ? 40 : 60,
+        right: isMobile ? 20 : 40,
+        top: 20,
+        bottom: isMobile ? 60 : 40,
+      },
+      slotProps: {
+        legend: {
+          hidden: isMobile,
+          position: { vertical: "top", horizontal: "right" },
+          itemMarkWidth: 8,
+          itemMarkHeight: 8,
+          markGap: 5,
+          itemGap: 10,
+        },
+      },
+    }
+  }, [yValues, xLabels, chartColor, isMobile, minIndex, maxIndex, minSentiment, maxSentiment, theme])
+
   return (
     <Box sx={{ height: 350, width: "100%", mt: 2 }}>
       {/* Min/Max Labels */}
@@ -58,59 +118,7 @@ const SentimentChart = ({ data }: SentimentChartProps) => {
       </Box>
 
       <LineChart
-        series={[
-          {
-            data: yValues,
-            label: "Sentiment",
-            color: chartColor,
-            showMark: true,
-            area: true,
-            valueFormatter: (value) => value.toFixed(2),
-            // Highlight min and max points
-            highlightedItems: [
-              { itemIndex: minIndex, style: { fill: theme.palette.error.main } },
-              { itemIndex: maxIndex, style: { fill: theme.palette.success.main } },
-            ],
-          },
-        ]}
-        xAxis={[
-          {
-            data: xLabels,
-            scaleType: "point",
-            tickLabelStyle: {
-              fontSize: isMobile ? 10 : 12,
-              angle: isMobile ? 45 : 0,
-              fill: theme.palette.text.secondary,
-            },
-          } as ChartsXAxis,
-        ]}
-        yAxis={[
-          {
-            min: Math.min(-0.3, minSentiment - 0.1),
-            max: Math.max(0.6, maxSentiment + 0.1),
-            tickLabelStyle: {
-              fontSize: isMobile ? 10 : 12,
-              fill: theme.palette.text.secondary,
-            },
-          } as ChartsYAxis,
-        ]}
-        height={300}
-        margin={{
-          left: isMobile ? 40 : 60,
-          right: isMobile ? 20 : 40,
-          top: 20,
-          bottom: isMobile ? 60 : 40,
-        }}
-        slotProps={{
-          legend: {
-            hidden: isMobile,
-            position: { vertical: "top", horizontal: "right" },
-            itemMarkWidth: 8,
-            itemMarkHeight: 8,
-            markGap: 5,
-            itemGap: 10,
-          },
-        }}
+        {...chartConfig}
         sx={{
           // Chart background and grid styling based on theme
           "--ChartsBackgroundFill": isDarkMode ? "rgba(0,0,0,0)" : "rgba(255,255,255,0)",
@@ -129,4 +137,4 @@ const SentimentChart = ({ data }: SentimentChartProps) => {
 }
 
 // Use React.memo to prevent unnecessary re-renders
-export default SentimentChart
+export default memo(SentimentChart)
