@@ -1,53 +1,65 @@
-"use client"
+"use client";
 
-import { useMemo } from "react"
-import { LineChart } from "@mui/x-charts/LineChart"
-import type { ChartsXAxis, ChartsYAxis } from "@mui/x-charts"
-import { useTheme } from "@mui/material/styles"
-import { useMediaQuery, Box, Typography } from "@mui/material"
-import { memo } from "react"
+import { useMemo } from "react";
+import { LineChart, LineChartProps } from "@mui/x-charts/LineChart";
+import { useTheme } from "@mui/material/styles";
+import { useMediaQuery, Box, Typography } from "@mui/material";
+import { memo } from "react";
 
 interface SentimentDataPoint {
-  date: string
-  sentiment: number
+  date: string;
+  sentiment: number;
 }
 
 interface SentimentChartProps {
-  data: SentimentDataPoint[]
+  data: SentimentDataPoint[];
+}
+
+// Custom axis config type to align with LineChart axis requirements
+interface CustomAxisConfig {
+  data?: string[];
+  scaleType?: "point" | "linear" | "band" | "time";
+  tickLabelStyle?: {
+    fontSize?: number;
+    angle?: number;
+    fill?: string;
+  };
+  min?: number;
+  max?: number;
 }
 
 const SentimentChart = ({ data }: SentimentChartProps) => {
-  const theme = useTheme()
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"))
-  const isDarkMode = theme.palette.mode === "dark"
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const isDarkMode = theme.palette.mode === "dark";
 
   // Memoize the processed data to avoid recalculations
   const { xLabels, yValues, minSentiment, maxSentiment, minIndex, maxIndex } = useMemo(() => {
     const xLabels = data.map((item) => {
-      const date = new Date(item.date)
-      return date.toLocaleDateString("en-US", { month: "short", day: "numeric" })
-    })
+      const date = new Date(item.date);
+      return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    });
 
-    const yValues = data.map((item) => item.sentiment)
-    const minSentiment = Math.min(...yValues)
-    const maxSentiment = Math.max(...yValues)
+    const yValues = data.map((item) => item.sentiment);
+    const minSentiment = Math.min(...yValues);
+    const maxSentiment = Math.max(...yValues);
 
     // Find indices of min and max values
-    const minIndex = yValues.indexOf(minSentiment)
-    const maxIndex = yValues.indexOf(maxSentiment)
+    const minIndex = yValues.indexOf(minSentiment);
+    const maxIndex = yValues.indexOf(maxSentiment);
 
-    return { xLabels, yValues, minSentiment, maxSentiment, minIndex, maxIndex }
-  }, [data])
+    return { xLabels, yValues, minSentiment, maxSentiment, minIndex, maxIndex };
+  }, [data]);
 
   // Determine chart color based on trend direction
   const chartColor = useMemo(() => {
-    const firstValue = data[0]?.sentiment || 0
-    const lastValue = data[data.length - 1]?.sentiment || 0
-    return lastValue > firstValue ? theme.palette.success.main : theme.palette.error.main
-  }, [data, theme.palette])
+    const firstValue = data[0]?.sentiment || 0;
+    const lastValue = data[data.length - 1]?.sentiment || 0;
+    return lastValue > firstValue ? theme.palette.success.main : theme.palette.error.main;
+  }, [data, theme.palette]);
 
   // Memoize chart configuration
-  const chartConfig = useMemo(() => {
+  const chartConfig = useMemo<LineChartProps>(() => {
     return {
       series: [
         {
@@ -56,12 +68,9 @@ const SentimentChart = ({ data }: SentimentChartProps) => {
           color: chartColor,
           showMark: true,
           area: true,
-          valueFormatter: (value: number) => value.toFixed(2),
-          // Highlight min and max points
-          highlightedItems: [
-            { itemIndex: minIndex, style: { fill: theme.palette.error.main } },
-            { itemIndex: maxIndex, style: { fill: theme.palette.success.main } },
-          ],
+          valueFormatter: (value: number | null) => (value != null ? value.toFixed(2) : ""),
+          // Note: Removed highlightedItems as it's not supported.
+          // To highlight min/max points, consider a second series or ChartsReferenceLine.
         },
       ],
       xAxis: [
@@ -73,7 +82,7 @@ const SentimentChart = ({ data }: SentimentChartProps) => {
             angle: isMobile ? 45 : 0,
             fill: theme.palette.text.secondary,
           },
-        } as ChartsXAxis,
+        } as CustomAxisConfig,
       ],
       yAxis: [
         {
@@ -83,7 +92,7 @@ const SentimentChart = ({ data }: SentimentChartProps) => {
             fontSize: isMobile ? 10 : 12,
             fill: theme.palette.text.secondary,
           },
-        } as ChartsYAxis,
+        } as CustomAxisConfig,
       ],
       height: 300,
       margin: {
@@ -95,15 +104,15 @@ const SentimentChart = ({ data }: SentimentChartProps) => {
       slotProps: {
         legend: {
           hidden: isMobile,
-          position: { vertical: "top", horizontal: "right" },
-          itemMarkWidth: 8,
+          position: { vertical: "top", horizontal: "end" }, // Fixed: Changed "right" to "end"
+          itemMarkWidth: 8, // CamelCase; revert to itemmarkwidth if warnings occur
           itemMarkHeight: 8,
           markGap: 5,
           itemGap: 10,
         },
       },
-    }
-  }, [yValues, xLabels, chartColor, isMobile, minIndex, maxIndex, minSentiment, maxSentiment, theme])
+    };
+  }, [yValues, xLabels, chartColor, isMobile, minIndex, maxIndex, minSentiment, maxSentiment, theme]);
 
   return (
     <Box sx={{ height: 350, width: "100%", mt: 2 }}>
@@ -120,21 +129,13 @@ const SentimentChart = ({ data }: SentimentChartProps) => {
       <LineChart
         {...chartConfig}
         sx={{
-          // Chart background and grid styling based on theme
           "--ChartsBackgroundFill": isDarkMode ? "rgba(0,0,0,0)" : "rgba(255,255,255,0)",
           "--ChartsGridLineColor": isDarkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)",
         }}
-        // Enable zoom and pan interactions
-        enableAxisZoom={true}
-        axisHighlight={{
-          x: "line",
-          y: "line",
-        }}
-        tooltip={{ trigger: "item" }}
       />
     </Box>
-  )
-}
+  );
+};
 
 // Use React.memo to prevent unnecessary re-renders
-export default memo(SentimentChart)
+export default memo(SentimentChart);

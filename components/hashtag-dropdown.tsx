@@ -1,42 +1,50 @@
-"use client"
+"use client";
 
-import { Box, Typography } from "@mui/material"
+import { Box, Typography, Select, MenuItem, SelectChangeEvent } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 
 interface HashtagDropdownProps {
-  currentHashtag: string
-  onHashtagChange: (hashtag: string) => void
+  currentHashtag: string;
+  onHashtagChange: (hashtag: string) => void;
 }
 
 const HashtagDropdown = ({ currentHashtag, onHashtagChange }: HashtagDropdownProps) => {
+  const theme = useTheme();
   // Available hashtags
-  const hashtags = ["uri", "nextjs", "react", "typescript"]
+  const hashtags = ["uri", "nextjs", "react", "typescript"];
 
-  // Use a simple select element for maximum compatibility
+  // Handle change event for Material-UI Select
+  const handleChange = (event: SelectChangeEvent<string>) => {
+    const newHashtag = event.target.value;
+    console.log("Dropdown changed to:", newHashtag);
+    onHashtagChange(newHashtag);
+  };
+
   return (
     <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
       <Typography variant="body2">Select hashtag:</Typography>
-      <select
+      <Select
         value={currentHashtag}
-        onChange={(e) => {
-          console.log("Dropdown changed to:", e.target.value)
-          onHashtagChange(e.target.value)
-        }}
-        style={{
-          padding: "8px 12px",
-          borderRadius: "4px",
-          border: "1px solid #ccc",
-          fontSize: "14px",
+        onChange={handleChange}
+        size="small" // Makes the select compact, similar to your original styling
+        sx={{
           minWidth: "120px",
+          fontSize: "14px",
+          "& .MuiSelect-select": {
+            padding: "8px 12px",
+          },
+          borderRadius: "4px",
+          border: `1px solid ${theme.palette.divider}`, // Matches your original border
         }}
       >
         {hashtags.map((tag) => (
-          <option key={tag} value={tag}>
+          <MenuItem key={tag} value={tag}>
             #{tag}
-          </option>
+          </MenuItem>
         ))}
-      </select>
+      </Select>
     </Box>
-  )
-}
+  );
+};
 
-export default HashtagDropdown
+export default HashtagDropdown;
