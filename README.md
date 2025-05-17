@@ -74,5 +74,5 @@ This project is a frontend engineering assessment that demonstrates the implemen
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/hashtag-sentiment-insights.git
-   cd hashtag-sentiment-insights
+   git clone git@github.com:matosky/insight-ui-assessment.git
+   cd insight-ui-assessment
